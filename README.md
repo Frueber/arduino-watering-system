@@ -21,6 +21,7 @@ Trigger relays to power water pumps when soil moisture is low.
 - 1 (* x) Capacitive Soil Moisture Sensor(s) v1.2.  
 - 1 Breadboard Power Supply Module 3.3V/5V.  
 - 1 4-Channel DC 5V Relay Module.  
+- 1 5V DC Water Pump.  
 
 ---
 
