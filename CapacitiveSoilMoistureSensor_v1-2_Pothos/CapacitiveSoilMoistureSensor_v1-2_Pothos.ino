@@ -51,7 +51,7 @@ void loop() {
   {
     digitalWrite(_waterPumpPin, RELAY_ON);
   }
-  if(soilMoisturePercent >= 55)
+  else if(soilMoisturePercent >= 55)
   {
     digitalWrite(_waterPumpPin, RELAY_OFF);
   }
