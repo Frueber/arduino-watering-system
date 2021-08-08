@@ -1,6 +1,8 @@
 # Arduino Watering System  
 
+An automated watering system.  
 
+Given a maximum and minimum soil moisture the Arduino will handle turning on and off water pumps.  
 
 ---
 
@@ -22,6 +24,7 @@ Trigger relays to power water pumps when soil moisture is low.
 - 1 Breadboard Power Supply Module 3.3V/5V.  
 - 1 4-Channel DC 5V Relay Module.  
 - 1 5V DC Water Pump.  
+- 2 5 Ohm Potentiometers.   
 
 ---
 
@@ -40,3 +43,4 @@ Owen Shartle
 
 ## Change Log  
 - 08/04/2021: Created.  
+- 08/08/2021: Adding potentiometers for setting a maximum and minimum soil moisture.  
