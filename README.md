@@ -25,7 +25,7 @@ Trigger relays to power water pumps when soil moisture is low.
 - 1 4-Channel DC 5V Relay Module.  
 - 1 5V DC Water Pump.  
 - 2 5 Ohm Potentiometers.  
-- 1 LCD Display (16 x 2).  
+- 1 LCD (16 x 2).  
 
 ---
 
