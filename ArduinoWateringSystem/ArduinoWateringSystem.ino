@@ -157,7 +157,7 @@ void handleLcd()
   lcd.print("%");
   lcd.setCursor(0, 1);
   lcd.print("Min:");
-  lcd.print(minimumSoilMoisturePercentage + "%");
+  lcd.print(minimumSoilMoisturePercentage);
   lcd.print("%");
   lcd.print("Max:");
   lcd.print(maximumSoilMoisturePercentage);
