@@ -1,3 +1,9 @@
+#include <LiquidCrystal.h>
+
+// Initialize the LiquidCrystal library by associating any needed LCD interface pin with the arduino pin number it is connected to.
+const byte rs = 7, en = 8, d4 = 9, d5 = 10, d6 = 11, d7 = 12;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
 // The Capacitive Soil Moisture Sensor v1.2 is active low.  
 // We define RELAY_ON and RELAY_OFF for clarity.  
 #define RELAY_ON LOW
@@ -14,6 +20,8 @@ const int _minimumSoilMoisturePercentageSensorPin = A2;
 const int _maximumSoilMoisturePercentageSensorReadingValue = 1023;
 int maximumSoilMoisturePercentage = 0;
 int minimumSoilMoisturePercentage = 0;
+int soilMoisturePercentage = 0;
+int soilMoistureSensorValue = 0;
 
 // Time variables for throttling current soil moisture percentage serial printing.
 unsigned long timeOfLastSoilMoisturePercentagePrint = 0;
@@ -82,10 +90,7 @@ void handleSoilMoisturePercentageControl()
   handleSoilMoisturePercentageControlPrint();
 }
 
-void handleSoilMoisturePercentagePrint(
-  int soilMoistureSensorValue,
-  int soilMoisturePercentage
-)
+void handleSoilMoisturePercentagePrint()
 {
   timePassedSinceLastSoilMoisturePercentagePrint = millis() - timeOfLastSoilMoisturePercentagePrint;
   bool isSoilMoisturePercentagePrintAllowed = timePassedSinceLastSoilMoisturePercentagePrint > 1000;
@@ -102,11 +107,11 @@ void handleSoilMoisturePercentagePrint(
   }
 }
 
-int getCurrentSoilMoisturePercentage()
+void setCurrentSoilMoisturePercentage()
 {
-  int soilMoistureSensorValue = analogRead(_soilMoistureSensorPin);
+  soilMoistureSensorValue = analogRead(_soilMoistureSensorPin);
 
-  int soilMoisturePercentage = map(
+  soilMoisturePercentage = map(
     soilMoistureSensorValue,
     _airValue,
     _waterValue,
@@ -123,15 +128,10 @@ int getCurrentSoilMoisturePercentage()
     soilMoisturePercentage = 0;
   }
 
-  handleSoilMoisturePercentagePrint(
-    soilMoistureSensorValue,
-    soilMoisturePercentage
-  );
-  
-  return soilMoisturePercentage;
+  handleSoilMoisturePercentagePrint();
 }
 
-void handleWaterPump(int soilMoisturePercentage)
+void handleWaterPump()
 {
   // Turn on/off water pump.
   if(soilMoisturePercentage >= maximumSoilMoisturePercentage)
@@ -144,6 +144,26 @@ void handleWaterPump(int soilMoisturePercentage)
   }
 }
 
+/*
+ * The LCD screen has 2 rows with 16 characters each.  
+ * The first row will display the current soil moisture sensor reading.  
+ * The second row will display the currently set minimum and maximum soil moisture values.  
+ */
+void handleLcd()
+{
+  lcd.home();
+  lcd.print("Current:");
+  lcd.print(soilMoisturePercentage);
+  lcd.print("%");
+  lcd.setCursor(0, 1);
+  lcd.print("Min:");
+  lcd.print(minimumSoilMoisturePercentage + "%");
+  lcd.print("%");
+  lcd.print("Max:");
+  lcd.print(maximumSoilMoisturePercentage);
+  lcd.print("%");
+}
+
 void setup()
 {
   Serial.begin(9600);
@@ -151,13 +171,19 @@ void setup()
   // Ensure the digital pin for the water pump is off by default.
   digitalWrite(_waterPumpPin, RELAY_OFF);
   pinMode(_waterPumpPin, OUTPUT);
+
+  // Set up the LCD's number of columns and rows:
+  lcd.begin(16, 2);
+  lcd.clear();
 }
 
 void loop()
 {
   handleSoilMoisturePercentageControl();
   
-  int soilMoisturePercentage = getCurrentSoilMoisturePercentage();
+  setCurrentSoilMoisturePercentage();
   
-  handleWaterPump(soilMoisturePercentage);
+  handleWaterPump();
+
+  handleLcd();
 }

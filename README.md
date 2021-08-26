@@ -24,7 +24,8 @@ Trigger relays to power water pumps when soil moisture is low.
 - 1 Breadboard Power Supply Module 3.3V/5V.  
 - 1 4-Channel DC 5V Relay Module.  
 - 1 5V DC Water Pump.  
-- 2 5 Ohm Potentiometers.   
+- 2 5 Ohm Potentiometers.  
+- 1 LCD Display (16 x 2).  
 
 ---
 
@@ -44,3 +45,4 @@ Owen Shartle
 ## Change Log  
 - 08/04/2021: Created.  
 - 08/08/2021: Adding potentiometers for setting a maximum and minimum soil moisture.  
+- 08/26/2021: Adding LCD for displaying current reading and currently set minimum and maximum soil moisture values.  
