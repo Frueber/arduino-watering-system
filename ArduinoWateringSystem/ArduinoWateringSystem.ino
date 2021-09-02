@@ -68,23 +68,26 @@ void handleSoilMoisturePercentageControlPrint()
 
 void handleSoilMoisturePercentageControl()
 {
-  maximumSoilMoisturePercentage = getSensorPercentage(
+  int tempMaximumSoilMoisturePercentage = getSensorPercentage(
     _maximumSoilMoisturePercentageSensorPin,
     _maximumSoilMoisturePercentageSensorReadingValue
   );
-  minimumSoilMoisturePercentage = getSensorPercentage(
+  int tempMinimumSoilMoisturePercentage = getSensorPercentage(
     _minimumSoilMoisturePercentageSensorPin,
     _maximumSoilMoisturePercentageSensorReadingValue
   );
 
-  if(maximumSoilMoisturePercentage < minimumSoilMoisturePercentage)
+  // Allow updates of the min and max if they don't cross values.
+  // TODO: Implementing a way to initiate changing the min/max independently 
+  // would reduce the chance of accidental water pump starts.
+  if(tempMaximumSoilMoisturePercentage >= minimumSoilMoisturePercentage)
   {
-    maximumSoilMoisturePercentage = minimumSoilMoisturePercentage;
+    maximumSoilMoisturePercentage = tempMaximumSoilMoisturePercentage;
   }
   
-  if(minimumSoilMoisturePercentage > maximumSoilMoisturePercentage)
+  if(tempMinimumSoilMoisturePercentage <= maximumSoilMoisturePercentage)
   {
-    minimumSoilMoisturePercentage = maximumSoilMoisturePercentage;
+    minimumSoilMoisturePercentage = tempMinimumSoilMoisturePercentage;
   }
 
   handleSoilMoisturePercentageControlPrint();
@@ -144,6 +147,21 @@ void handleWaterPump()
   }
 }
 
+void printThreeDigitsToLcd(int value)
+{
+  if(value < 100)
+  {
+    lcd.print("0");
+
+    if(value < 10)
+    {
+      lcd.print("0");
+    }
+  }
+
+  lcd.print(value);
+}
+
 /*
  * The LCD screen has 2 rows with 16 characters each.  
  * The first row will display the current soil moisture sensor reading.  
@@ -153,14 +171,22 @@ void handleLcd()
 {
   lcd.home();
   lcd.print("Current:");
-  lcd.print(soilMoisturePercentage);
-  lcd.print("%");
+
+  printThreeDigitsToLcd(soilMoisturePercentage);
+  
+  lcd.print("%    ");
+  
   lcd.setCursor(0, 1);
+  
   lcd.print("Min:");
-  lcd.print(minimumSoilMoisturePercentage);
+
+  printThreeDigitsToLcd(minimumSoilMoisturePercentage);
+  
   lcd.print("%");
   lcd.print("Max:");
-  lcd.print(maximumSoilMoisturePercentage);
+
+  printThreeDigitsToLcd(maximumSoilMoisturePercentage);
+  
   lcd.print("%");
 }
 
