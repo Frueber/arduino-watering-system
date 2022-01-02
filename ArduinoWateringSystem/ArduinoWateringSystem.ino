@@ -23,6 +23,13 @@ int minimumSoilMoisturePercentage = 0;
 int soilMoisturePercentage = 0;
 int soilMoistureSensorValue = 0;
 
+// Variables for throttling the duration and iterations of the water pump being on (pumping water).
+unsigned long timeOfLastWaterPumpStart = 0;
+unsigned long maximumWaterPumpOnDurationInMilliseconds = 1000;
+unsigned long timeOfLastWaterPumpOnPauseStart = 0;
+unsigned long maximumWaterPumpOnPauseDurationInMilliseconds = 4000;
+bool isWaterPumpOnPaused = false;
+
 // Time variables for throttling current soil moisture percentage serial printing.
 unsigned long timeOfLastSoilMoisturePercentagePrint = 0;
 unsigned long timePassedSinceLastSoilMoisturePercentagePrint = 0;
@@ -136,14 +143,50 @@ void setCurrentSoilMoisturePercentage()
 
 void handleWaterPump()
 {
+  // We will shut off the water pump, if the prescribed soild moisture isn't already reached, after a set maximum "on time".  
+  // This gives the water time to reach and penetrate the soil, reducing chance of overwatering and overflow.
+  unsigned long timePassedSinceLastWaterPumpStart = millis() - timeOfLastWaterPumpStart;
+  bool isMaximumWaterPumpOnDurationExceeded = timePassedSinceLastWaterPumpStart >= maximumWaterPumpOnDurationInMilliseconds;
+  
+  unsigned long timePassedSinceLastWaterPumpOnPauseStart = millis() - timeOfLastWaterPumpOnPauseStart;
+  bool isMaximumWaterPumpOnPauseDurationExceeded = timePassedSinceLastWaterPumpOnPauseStart >= maximumWaterPumpOnPauseDurationInMilliseconds;
+
+  bool isWaterPumpOn = digitalRead(_waterPumpPin) == RELAY_ON;
+  
+  // Unpause the water pump.
+  if(
+    isWaterPumpOnPaused
+    && !isWaterPumpOn
+    && isMaximumWaterPumpOnPauseDurationExceeded
+  )
+  {
+    isWaterPumpOnPaused = false;
+  }
+  
   // Turn on/off water pump.
-  if(soilMoisturePercentage >= maximumSoilMoisturePercentage)
+  if(
+    isWaterPumpOn
+    && (
+      soilMoisturePercentage >= maximumSoilMoisturePercentage
+      || isMaximumWaterPumpOnDurationExceeded
+    )
+  )
   {
     digitalWrite(_waterPumpPin, RELAY_OFF);
+
+    // Enter "pause" mode whenever the water pump is turned off.
+    isWaterPumpOnPaused = true;
+    timeOfLastWaterPumpOnPauseStart = millis();
   }
-  else if(soilMoisturePercentage < minimumSoilMoisturePercentage)
+  else if(
+    !isWaterPumpOn
+    && !isWaterPumpOnPaused
+    && soilMoisturePercentage < minimumSoilMoisturePercentage
+  )
   {
     digitalWrite(_waterPumpPin, RELAY_ON);
+    
+    timeOfLastWaterPumpStart = millis();
   }
 }
 
