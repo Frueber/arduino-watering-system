@@ -38,6 +38,12 @@ unsigned long timePassedSinceLastSoilMoisturePercentagePrint = 0;
 unsigned long timeOfLastSoilMoisturePercentageControlPrint = 0;
 unsigned long timePassedSinceLastSoilMoisturePercentageControlPrint = 0;
 
+// Time variables for throttling LCD printing.
+unsigned long timeOfLastLcdPrint = 0;
+unsigned long timePassedSinceLastLcdPrint = 0;
+unsigned long lcdPrintPauseDurationInMilliseconds = 100;
+bool isLcdPrintAllowedByWaterPumpPriority = true;
+
 int getSensorPercentage(
   int sensorPin,
   int maximumSensorReadingValue
@@ -51,6 +57,15 @@ int getSensorPercentage(
     0,
     100
   );
+
+  if(percentage > 100)
+  {
+    percentage = 100;
+  }
+  else if(percentage < 0)
+  {
+    percentage = 0;
+  }
 
   return percentage;
 }
@@ -172,11 +187,19 @@ void handleWaterPump()
     )
   )
   {
+    // HACK: Testing if the screen flashing and garbage printing can be avoided by first re-initializing it.
+    if(!isLcdPrintAllowedByWaterPumpPriority)
+    {
+      lcd.begin(16, 2);
+      lcd.clear();
+    }
+    
     digitalWrite(_waterPumpPin, RELAY_OFF);
 
     // Enter "pause" mode whenever the water pump is turned off.
     isWaterPumpOnPaused = true;
     timeOfLastWaterPumpOnPauseStart = millis();
+    isLcdPrintAllowedByWaterPumpPriority = true;
   }
   else if(
     !isWaterPumpOn
@@ -184,9 +207,18 @@ void handleWaterPump()
     && soilMoisturePercentage < minimumSoilMoisturePercentage
   )
   {
+    // HACK: Testing if the screen flashing and garbage printing can be avoided by first re-initializing it.
+    if(isLcdPrintAllowedByWaterPumpPriority)
+    {
+      lcd.begin(16, 2);
+      lcd.clear();
+      lcd.print("Watering...");
+    }
+    
     digitalWrite(_waterPumpPin, RELAY_ON);
     
     timeOfLastWaterPumpStart = millis();
+    isLcdPrintAllowedByWaterPumpPriority = false;
   }
 }
 
@@ -212,25 +244,38 @@ void printThreeDigitsToLcd(int value)
  */
 void handleLcd()
 {
-  lcd.home();
-  lcd.print("Current:");
+  timePassedSinceLastLcdPrint = millis() - timeOfLastLcdPrint;
+  
+  bool isLcdPrintAllowedByTime = timePassedSinceLastLcdPrint > lcdPrintPauseDurationInMilliseconds;
+  
+  if(
+    isLcdPrintAllowedByWaterPumpPriority
+    && isLcdPrintAllowedByTime
+  )
+  {
+    lcd.clear();
+    lcd.home();
+    lcd.print("Current:");
+  
+    printThreeDigitsToLcd(soilMoisturePercentage);
+    
+    lcd.print("%    ");
+    
+    lcd.setCursor(0, 1);
+    
+    lcd.print("Min:");
+  
+    printThreeDigitsToLcd(minimumSoilMoisturePercentage);
+    
+    lcd.print("%");
+    lcd.print("Max:");
+  
+    printThreeDigitsToLcd(maximumSoilMoisturePercentage);
+    
+    lcd.print("%");
 
-  printThreeDigitsToLcd(soilMoisturePercentage);
-  
-  lcd.print("%    ");
-  
-  lcd.setCursor(0, 1);
-  
-  lcd.print("Min:");
-
-  printThreeDigitsToLcd(minimumSoilMoisturePercentage);
-  
-  lcd.print("%");
-  lcd.print("Max:");
-
-  printThreeDigitsToLcd(maximumSoilMoisturePercentage);
-  
-  lcd.print("%");
+    timeOfLastLcdPrint = millis();
+  }
 }
 
 void setup()
@@ -252,7 +297,7 @@ void loop()
   
   setCurrentSoilMoisturePercentage();
   
-  handleWaterPump();
-
   handleLcd();
+  
+  handleWaterPump();  
 }
